@@ -8,49 +8,45 @@ export default function Home() {
   const [sets, setSets] = useState([]);
   const [activeDeckId, setActiveDeckId] = useState(null);
 
-  // Settings & Accessibility State
+  // Accessibility & Theme States
   const [darkMode, setDarkMode] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
 
-  // AI Tab State
+  // AI Generator States
   const [aiTitle, setAiTitle] = useState("");
   const [aiText, setAiText] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // Manual Tab State
+  // Manual Deck States
   const [manualTitle, setManualTitle] = useState("");
   const [manualTerm, setManualTerm] = useState("");
   const [manualDef, setManualDef] = useState("");
   const [manualCards, setManualCards] = useState([]);
 
-  // Import Tab State
+  // Import Deck States
   const [importTitle, setImportTitle] = useState("");
   const [importText, setImportText] = useState("");
   const [termSeparator, setTermSeparator] = useState("tab");
 
-  // Card Flip State
+  // Flashcard Flip State
   const [flippedCards, setFlippedCards] = useState({});
 
   useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined") {
-      const savedSets = localStorage.getItem("flashcard_sets");
-      if (savedSets) {
-        try { setSets(JSON.parse(savedSets)); } catch (e) {}
-      }
-      const savedDark = localStorage.getItem("fc_dark_mode");
-      if (savedDark !== null) {
-        try { setDarkMode(JSON.parse(savedDark)); } catch (e) {}
-      }
-      const savedContrast = localStorage.getItem("fc_high_contrast");
-      if (savedContrast !== null) {
-        try { setHighContrast(JSON.parse(savedContrast)); } catch (e) {}
-      }
-      const savedLarge = localStorage.getItem("fc_large_text");
-      if (savedLarge !== null) {
-        try { setLargeText(JSON.parse(savedLarge)); } catch (e) {}
+      try {
+        const savedSets = localStorage.getItem("flashcard_sets");
+        if (savedSets) setSets(JSON.parse(savedSets));
+        const savedDark = localStorage.getItem("fc_dark_mode");
+        if (savedDark !== null) setDarkMode(JSON.parse(savedDark));
+        const savedContrast = localStorage.getItem("fc_high_contrast");
+        if (savedContrast !== null) setHighContrast(JSON.parse(savedContrast));
+        const savedLarge = localStorage.getItem("fc_large_text");
+        if (savedLarge !== null) setLargeText(JSON.parse(savedLarge));
+      } catch (e) {
+        console.error("Storage load error:", e);
       }
     }
   }, []);
@@ -62,26 +58,11 @@ export default function Home() {
     }
   };
 
-  const toggleDarkMode = (val) => {
-    setDarkMode(val);
-    if (typeof window !== "undefined") localStorage.setItem("fc_dark_mode", JSON.stringify(val));
-  };
-
-  const toggleHighContrast = (val) => {
-    setHighContrast(val);
-    if (typeof window !== "undefined") localStorage.setItem("fc_high_contrast", JSON.stringify(val));
-  };
-
-  const toggleLargeText = (val) => {
-    setLargeText(val);
-    if (typeof window !== "undefined") localStorage.setItem("fc_large_text", JSON.stringify(val));
-  };
-
   const createDeck = (title, cards) => {
     if (!cards || !cards.length) return;
     const newDeck = {
       id: Date.now().toString(),
-      title: title.trim() || `Untitled Set (${new Date().toLocaleDateString()})`,
+      title: title.trim() || `Untitled Deck (${new Date().toLocaleDateString()})`,
       cards: cards,
       createdAt: new Date().toISOString(),
     };
@@ -117,16 +98,16 @@ export default function Home() {
 
       const data = await res.json();
       if (!res.ok || data.error) {
-        setAiError(data.error || "Generation failed");
+        setAiError(data.error || "Generation failed.");
       } else if (data.flashcards && data.flashcards.length) {
         createDeck(aiTitle || "AI Generated Deck", data.flashcards);
         setAiText("");
         setAiTitle("");
       } else {
-        setAiError("No valid flashcards generated. Try expanding your notes.");
+        setAiError("No valid flashcards generated. Try adding more study text.");
       }
     } catch (err) {
-      setAiError("Network error. Check connection or API keys.");
+      setAiError("Network connection error. Check your API route or connection.");
     } finally {
       setAiLoading(false);
     }
@@ -148,45 +129,36 @@ export default function Home() {
 
   const handleImport = () => {
     if (!importText.trim()) return;
-
     let sep = "\t";
     if (termSeparator === "comma") sep = ",";
     if (termSeparator === "dash") sep = "-";
 
     const lines = importText.split("\n");
-    const parsedCards = [];
-
+    const parsed = [];
     lines.forEach((line) => {
       const parts = line.split(sep);
       if (parts.length >= 2) {
         const question = parts[0].trim();
         const answer = parts.slice(1).join(sep).trim();
-        if (question && answer) {
-          parsedCards.push({ question, answer });
-        }
+        if (question && answer) parsed.push({ question, answer });
       }
     });
 
-    if (parsedCards.length > 0) {
-      createDeck(importTitle || "Imported Deck", parsedCards);
+    if (parsed.length > 0) {
+      createDeck(importTitle || "Imported Deck", parsed);
       setImportText("");
       setImportTitle("");
     } else {
-      if (typeof window !== "undefined") {
-        alert("Could not parse any cards. Make sure terms and definitions match your selected separator.");
-      }
+      if (typeof window !== "undefined") alert("Could not parse cards. Make sure terms and definitions use your selected separator.");
     }
-  };
-
-  const toggleFlip = (index) => {
-    setFlippedCards((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
   if (!mounted) return null;
 
+  // Dynamic Theme Colors
   const bg = darkMode ? (highContrast ? "#000000" : "#0f172a") : (highContrast ? "#ffffff" : "#f8fafc");
   const text = darkMode ? "#f8fafc" : "#0f172a";
-  const sidebarBg = darkMode ? (highContrast ? "#000000" : "#1e293b") : (highContrast ? "#ffffff" : "#ffffff");
+  const sidebarBg = darkMode ? (highContrast ? "#000000" : "#1e293b") : "#ffffff";
   const cardBg = darkMode ? (highContrast ? "#121212" : "#1e293b") : "#ffffff";
   const border = highContrast ? (darkMode ? "#ffffff" : "#000000") : (darkMode ? "#334155" : "#e2e8f0");
   const primary = highContrast ? (darkMode ? "#ffff00" : "#0000ff") : "#2563eb";
@@ -194,14 +166,14 @@ export default function Home() {
 
   const activeDeck = sets.find((s) => s.id === activeDeckId);
 
-  const navButtonStyle = (isActive) => ({
+  const navBtnStyle = (tabKey) => ({
     padding: "10px 14px",
     borderRadius: "6px",
-    border: `1px solid ${isActive ? primary : "transparent"}`,
-    backgroundColor: isActive ? primary : "transparent",
-    color: isActive ? primaryText : "inherit",
+    border: `1px solid ${activeTab === tabKey ? primary : "transparent"}`,
+    backgroundColor: activeTab === tabKey ? primary : "transparent",
+    color: activeTab === tabKey ? primaryText : "inherit",
     textAlign: "left",
-    fontWeight: isActive ? "bold" : "normal",
+    fontWeight: activeTab === tabKey ? "bold" : "normal",
     cursor: "pointer",
     fontSize: "0.95rem"
   });
@@ -213,38 +185,19 @@ export default function Home() {
     border: `1px solid ${border}`,
     backgroundColor: cardBg,
     color: text,
-    fontSize: "1rem"
+    fontSize: "1rem",
+    boxSizing: "border-box"
   };
 
-  const btnStyle = (bgCol, txtCol) => ({
+  const primaryBtnStyle = {
     padding: "12px 20px",
     borderRadius: "6px",
     border: "none",
-    backgroundColor: bgCol,
-    color: txtCol,
+    backgroundColor: primary,
+    color: primaryText,
     fontWeight: "bold",
     cursor: "pointer",
     fontSize: "1rem"
-  });
-
-  const settingRowStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px",
-    backgroundColor: cardBg,
-    border: `1px solid ${border}`,
-    borderRadius: "8px",
-    cursor: "pointer"
-  };
-
-  const errorBoxStyle = {
-    marginTop: "16px",
-    padding: "12px",
-    backgroundColor: "#fee2e2",
-    border: "1px solid #ef4444",
-    color: "#991b1b",
-    borderRadius: "6px"
   };
 
   return (
@@ -255,18 +208,10 @@ export default function Home() {
         <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, color: primary }}>⚡ Flashcards</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <button onClick={() => setActiveTab("ai")} style={navButtonStyle(activeTab === "ai")}>
-            ✨ AI Generator
-          </button>
-          <button onClick={() => setActiveTab("manual")} style={navButtonStyle(activeTab === "manual")}>
-            ✍️ Manual Entry
-          </button>
-          <button onClick={() => setActiveTab("import")} style={navButtonStyle(activeTab === "import")}>
-            📥 Import Deck
-          </button>
-          <button onClick={() => setActiveTab("settings")} style={navButtonStyle(activeTab === "settings")}>
-            ⚙️ Settings & Access
-          </button>
+          <button onClick={() => setActiveTab("ai")} style={navBtnStyle("ai")}>✨ AI Generator</button>
+          <button onClick={() => setActiveTab("manual")} style={navBtnStyle("manual")}>✍️ Manual Entry</button>
+          <button onClick={() => setActiveTab("import")} style={navBtnStyle("import")}>📥 Import Deck</button>
+          <button onClick={() => setActiveTab("settings")} style={navBtnStyle("settings")}>⚙️ Settings & Access</button>
         </div>
 
         <hr style={{ border: "none", borderTop: `1px solid ${border}`, margin: "0" }} />
@@ -337,18 +282,22 @@ export default function Home() {
               placeholder="Paste study notes here..."
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
-              style={{ ...inputStyle, marginTop: "12px", width: "100%", boxSizing: "border-box" }}
+              style={{ ...inputStyle, marginTop: "12px" }}
             />
 
             <button
               onClick={handleAIGenerate}
               disabled={aiLoading}
-              style={{ ...btnStyle(primary, primaryText), width: "100%", marginTop: "16px" }}
+              style={{ ...primaryBtnStyle, width: "100%", marginTop: "16px" }}
             >
               {aiLoading ? "Generating Flashcards..." : "Generate & Save Deck"}
             </button>
 
-            {aiError && <div style={errorBoxStyle}>{aiError}</div>}
+            {aiError && (
+              <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#fee2e2", border: "1px solid #ef4444", color: "#991b1b", borderRadius: "6px" }}>
+                {aiError}
+              </div>
+            )}
           </div>
         )}
 
@@ -383,7 +332,7 @@ export default function Home() {
               />
             </div>
 
-            <button onClick={handleAddManualCard} style={{ ...btnStyle(primary, primaryText), marginTop: "12px" }}>
+            <button onClick={handleAddManualCard} style={{ ...primaryBtnStyle, marginTop: "12px" }}>
               + Add Card
             </button>
 
@@ -397,7 +346,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <button onClick={handleSaveManualDeck} style={{ ...btnStyle("#10b981", "#ffffff"), width: "100%" }}>
+                <button onClick={handleSaveManualDeck} style={{ ...primaryBtnStyle, backgroundColor: "#10b981", color: "#ffffff", width: "100%" }}>
                   Save Complete Deck
                 </button>
               </div>
@@ -405,7 +354,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* TAB 3: IMPORT FROM OTHER SITES */}
+        {/* TAB 3: IMPORT */}
         {activeTab === "import" && (
           <div>
             <h1>📥 Import Deck from Text</h1>
@@ -437,10 +386,10 @@ export default function Home() {
               placeholder="Paste lines of terms and definitions here..."
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
-              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+              style={{ ...inputStyle }}
             />
 
-            <button onClick={handleImport} style={{ ...btnStyle(primary, primaryText), width: "100%", marginTop: "16px" }}>
+            <button onClick={handleImport} style={{ ...primaryBtnStyle, width: "100%", marginTop: "16px" }}>
               Import Flashcards
             </button>
           </div>
@@ -453,7 +402,7 @@ export default function Home() {
             
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginTop: "24px" }}>
               
-              <label style={settingRowStyle}>
+              <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: cardBg, border: `1px solid ${border}`, borderRadius: "8px", cursor: "pointer" }}>
                 <div>
                   <strong>Dark Mode</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Switch to dark background for lower eye strain.</p>
@@ -461,12 +410,15 @@ export default function Home() {
                 <input
                   type="checkbox"
                   checked={darkMode}
-                  onChange={(e) => toggleDarkMode(e.target.checked)}
+                  onChange={(e) => {
+                    setDarkMode(e.target.checked);
+                    if (typeof window !== "undefined") localStorage.setItem("fc_dark_mode", JSON.stringify(e.target.checked));
+                  }}
                   style={{ width: "20px", height: "20px" }}
                 />
               </label>
 
-              <label style={settingRowStyle}>
+              <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: cardBg, border: `1px solid ${border}`, borderRadius: "8px", cursor: "pointer" }}>
                 <div>
                   <strong>High Contrast Mode</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Enhances element borders and color contrast for visibility.</p>
@@ -474,12 +426,15 @@ export default function Home() {
                 <input
                   type="checkbox"
                   checked={highContrast}
-                  onChange={(e) => toggleHighContrast(e.target.checked)}
+                  onChange={(e) => {
+                    setHighContrast(e.target.checked);
+                    if (typeof window !== "undefined") localStorage.setItem("fc_high_contrast", JSON.stringify(e.target.checked));
+                  }}
                   style={{ width: "20px", height: "20px" }}
                 />
               </label>
 
-              <label style={settingRowStyle}>
+              <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: cardBg, border: `1px solid ${border}`, borderRadius: "8px", cursor: "pointer" }}>
                 <div>
                   <strong>Large Text Scaling</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Increase overall font size throughout the app.</p>
@@ -487,7 +442,10 @@ export default function Home() {
                 <input
                   type="checkbox"
                   checked={largeText}
-                  onChange={(e) => toggleLargeText(e.target.checked)}
+                  onChange={(e) => {
+                    setLargeText(e.target.checked);
+                    if (typeof window !== "undefined") localStorage.setItem("fc_large_text", JSON.stringify(e.target.checked));
+                  }}
                   style={{ width: "20px", height: "20px" }}
                 />
               </label>
@@ -512,7 +470,7 @@ export default function Home() {
                 return (
                   <div
                     key={idx}
-                    onClick={() => toggleFlip(idx)}
+                    onClick={() => setFlippedCards((prev) => ({ ...prev, [idx]: !prev[idx] }))}
                     style={{
                       backgroundColor: cardBg,
                       border: `2px solid ${isFlipped ? primary : border}`,
@@ -526,7 +484,6 @@ export default function Home() {
                       textAlign: "center",
                       cursor: "pointer",
                       boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                      transition: "transform 0.2s ease, border-color 0.2s ease",
                       userSelect: "none"
                     }}
                   >
