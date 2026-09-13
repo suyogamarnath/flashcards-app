@@ -17,15 +17,15 @@ export async function POST(req) {
       headers: {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000",
+        "HTTP-Referer": "https://flashcard-app.vercel.app",
         "X-Title": "Flashcard Generator"
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.3-70b-instruct:free",
+        model: "openrouter/free",
         messages: [
           {
             role: "system",
-            content: "You are a flashcard generator. Extract key concepts and return ONLY valid JSON matching this exact structure: { \"flashcards\": [ { \"question\": \"...\", \"answer\": \"...\" } ] }",
+            content: "You are a flashcard generator. Extract key concepts and return ONLY valid JSON with no markdown formatting. Follow this exact structure: { \"flashcards\": [ { \"question\": \"...\", \"answer\": \"...\" } ] }",
           },
           {
             role: "user",
@@ -42,7 +42,6 @@ export async function POST(req) {
       return NextResponse.json({ error: data.error?.message || "OpenRouter API request failed." }, { status: response.status });
     }
 
-    // Clean out markdown code blocks if present
     let rawContent = data.choices[0].message.content;
     rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
 
