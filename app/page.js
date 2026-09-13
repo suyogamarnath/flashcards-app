@@ -1,3 +1,6 @@
+import subprocess
+
+js_code = """
 "use client";
 
 import { useState, useEffect } from "react";
@@ -146,11 +149,11 @@ export default function Home() {
   const handleImport = () => {
     if (!importText.trim()) return;
 
-    let sep = "\t";
+    let sep = "\\t";
     if (termSeparator === "comma") sep = ",";
     if (termSeparator === "dash") sep = "-";
 
-    const lines = importText.split("\n");
+    const lines = importText.split("\\n");
     const parsedCards = [];
 
     lines.forEach((line) => {
@@ -379,7 +382,7 @@ export default function Home() {
 
             <textarea
               rows={8}
-              placeholder={`Example format:\nTerm 1\tDefinition 1\nTerm 2\tDefinition 2`}
+              placeholder={`Example format:\nTerm 1\\tDefinition 1\nTerm 2\\tDefinition 2`}
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               style={{ ...inputStyle(cardBg, text, border), width: "100%", boxSizing: "border-box" }}
@@ -536,16 +539,14 @@ function btnStyle(bg, text) {
   };
 }
 
-function errorStyle {
-  return {
-    marginTop: "16px",
-    padding: "12px",
-    backgroundColor: "#fee2e2",
-    border: "1px solid #ef4444",
-    color: "#991b1b",
-    borderRadius: "6px"
-  };
-}
+const errorStyle = {
+  marginTop: "16px",
+  padding: "12px",
+  backgroundColor: "#fee2e2",
+  border: "1px solid #ef4444",
+  color: "#991b1b",
+  borderRadius: "6px"
+};
 
 function settingRowStyle(cardBg, border) {
   return {
@@ -559,3 +560,10 @@ function settingRowStyle(cardBg, border) {
     cursor: "pointer"
   };
 }
+"""
+
+with open("/tmp/test_page.js", "w") as f:
+    f.write(js_code)
+
+res = subprocess.run(["node", "-c", "/tmp/test_page.js"], capture_output=True, text=True)
+print("Node check output:", res.stdout, res.stderr)
