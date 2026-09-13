@@ -454,7 +454,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* DECK VIEW: FLIP FLASHCARDS */}
+        {/* DECK VIEW */}
         {activeTab === "deck" && activeDeck && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
