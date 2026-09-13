@@ -37,16 +37,21 @@ export default function Home() {
     setMounted(true);
     if (typeof window !== "undefined") {
       const savedSets = localStorage.getItem("flashcard_sets");
-      if (savedSets) setSets(JSON.parse(savedSets));
-
+      if (savedSets) {
+        try { setSets(JSON.parse(savedSets)); } catch (e) {}
+      }
       const savedDark = localStorage.getItem("fc_dark_mode");
-      if (savedDark !== null) setDarkMode(JSON.parse(savedDark));
-
+      if (savedDark !== null) {
+        try { setDarkMode(JSON.parse(savedDark)); } catch (e) {}
+      }
       const savedContrast = localStorage.getItem("fc_high_contrast");
-      if (savedContrast !== null) setHighContrast(JSON.parse(savedContrast));
-
+      if (savedContrast !== null) {
+        try { setHighContrast(JSON.parse(savedContrast)); } catch (e) {}
+      }
       const savedLarge = localStorage.getItem("fc_large_text");
-      if (savedLarge !== null) setLargeText(JSON.parse(savedLarge));
+      if (savedLarge !== null) {
+        try { setLargeText(JSON.parse(savedLarge)); } catch (e) {}
+      }
     }
   }, []);
 
@@ -73,7 +78,7 @@ export default function Home() {
   };
 
   const createDeck = (title, cards) => {
-    if (!cards.length) return;
+    if (!cards || !cards.length) return;
     const newDeck = {
       id: Date.now().toString(),
       title: title.trim() || `Untitled Set (${new Date().toLocaleDateString()})`,
@@ -189,6 +194,59 @@ export default function Home() {
 
   const activeDeck = sets.find((s) => s.id === activeDeckId);
 
+  const navButtonStyle = (isActive) => ({
+    padding: "10px 14px",
+    borderRadius: "6px",
+    border: `1px solid ${isActive ? primary : "transparent"}`,
+    backgroundColor: isActive ? primary : "transparent",
+    color: isActive ? primaryText : "inherit",
+    textAlign: "left",
+    fontWeight: isActive ? "bold" : "normal",
+    cursor: "pointer",
+    fontSize: "0.95rem"
+  });
+
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: "6px",
+    border: `1px solid ${border}`,
+    backgroundColor: cardBg,
+    color: text,
+    fontSize: "1rem"
+  };
+
+  const btnStyle = (bgCol, txtCol) => ({
+    padding: "12px 20px",
+    borderRadius: "6px",
+    border: "none",
+    backgroundColor: bgCol,
+    color: txtCol,
+    fontWeight: "bold",
+    cursor: "pointer",
+    fontSize: "1rem"
+  });
+
+  const settingRowStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px",
+    backgroundColor: cardBg,
+    border: `1px solid ${border}`,
+    borderRadius: "8px",
+    cursor: "pointer"
+  };
+
+  const errorBoxStyle = {
+    marginTop: "16px",
+    padding: "12px",
+    backgroundColor: "#fee2e2",
+    border: "1px solid #ef4444",
+    color: "#991b1b",
+    borderRadius: "6px"
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: bg, color: text, fontFamily: "system-ui, sans-serif", fontSize: largeText ? "18px" : "15px" }}>
       
@@ -197,16 +255,16 @@ export default function Home() {
         <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, color: primary }}>⚡ Flashcards</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <button onClick={() => setActiveTab("ai")} style={navButtonStyle(activeTab === "ai", primary, primaryText, border)}>
+          <button onClick={() => setActiveTab("ai")} style={navButtonStyle(activeTab === "ai")}>
             ✨ AI Generator
           </button>
-          <button onClick={() => setActiveTab("manual")} style={navButtonStyle(activeTab === "manual", primary, primaryText, border)}>
+          <button onClick={() => setActiveTab("manual")} style={navButtonStyle(activeTab === "manual")}>
             ✍️ Manual Entry
           </button>
-          <button onClick={() => setActiveTab("import")} style={navButtonStyle(activeTab === "import", primary, primaryText, border)}>
+          <button onClick={() => setActiveTab("import")} style={navButtonStyle(activeTab === "import")}>
             📥 Import Deck
           </button>
-          <button onClick={() => setActiveTab("settings")} style={navButtonStyle(activeTab === "settings", primary, primaryText, border)}>
+          <button onClick={() => setActiveTab("settings")} style={navButtonStyle(activeTab === "settings")}>
             ⚙️ Settings & Access
           </button>
         </div>
@@ -271,7 +329,7 @@ export default function Home() {
               placeholder="Deck Title (optional)"
               value={aiTitle}
               onChange={(e) => setAiTitle(e.target.value)}
-              style={inputStyle(cardBg, text, border)}
+              style={inputStyle}
             />
 
             <textarea
@@ -279,7 +337,7 @@ export default function Home() {
               placeholder="Paste study notes here..."
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
-              style={{ ...inputStyle(cardBg, text, border), marginTop: "12px", width: "100%", boxSizing: "border-box" }}
+              style={{ ...inputStyle, marginTop: "12px", width: "100%", boxSizing: "border-box" }}
             />
 
             <button
@@ -290,7 +348,7 @@ export default function Home() {
               {aiLoading ? "Generating Flashcards..." : "Generate & Save Deck"}
             </button>
 
-            {aiError && <div style={errorStyle}>{aiError}</div>}
+            {aiError && <div style={errorBoxStyle}>{aiError}</div>}
           </div>
         )}
 
@@ -305,7 +363,7 @@ export default function Home() {
               placeholder="Deck Title (e.g. History Chapter 4)"
               value={manualTitle}
               onChange={(e) => setManualTitle(e.target.value)}
-              style={inputStyle(cardBg, text, border)}
+              style={inputStyle}
             />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px" }}>
@@ -314,14 +372,14 @@ export default function Home() {
                 placeholder="Term / Question"
                 value={manualTerm}
                 onChange={(e) => setManualTerm(e.target.value)}
-                style={inputStyle(cardBg, text, border)}
+                style={inputStyle}
               />
               <input
                 type="text"
                 placeholder="Definition / Answer"
                 value={manualDef}
                 onChange={(e) => setManualDef(e.target.value)}
-                style={inputStyle(cardBg, text, border)}
+                style={inputStyle}
               />
             </div>
 
@@ -358,7 +416,7 @@ export default function Home() {
               placeholder="Imported Deck Title"
               value={importTitle}
               onChange={(e) => setImportTitle(e.target.value)}
-              style={inputStyle(cardBg, text, border)}
+              style={inputStyle}
             />
 
             <div style={{ marginTop: "16px", marginBottom: "16px" }}>
@@ -366,7 +424,7 @@ export default function Home() {
               <select
                 value={termSeparator}
                 onChange={(e) => setTermSeparator(e.target.value)}
-                style={{ ...inputStyle(cardBg, text, border), width: "auto" }}
+                style={{ ...inputStyle, width: "auto" }}
               >
                 <option value="tab">Tab (Quizlet Default)</option>
                 <option value="comma">Comma (,)</option>
@@ -379,7 +437,7 @@ export default function Home() {
               placeholder="Paste lines of terms and definitions here..."
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
-              style={{ ...inputStyle(cardBg, text, border), width: "100%", boxSizing: "border-box" }}
+              style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
             />
 
             <button onClick={handleImport} style={{ ...btnStyle(primary, primaryText), width: "100%", marginTop: "16px" }}>
@@ -395,7 +453,7 @@ export default function Home() {
             
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginTop: "24px" }}>
               
-              <label style={settingRowStyle(cardBg, border)}>
+              <label style={settingRowStyle}>
                 <div>
                   <strong>Dark Mode</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Switch to dark background for lower eye strain.</p>
@@ -408,7 +466,7 @@ export default function Home() {
                 />
               </label>
 
-              <label style={settingRowStyle(cardBg, border)}>
+              <label style={settingRowStyle}>
                 <div>
                   <strong>High Contrast Mode</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Enhances element borders and color contrast for visibility.</p>
@@ -421,7 +479,7 @@ export default function Home() {
                 />
               </label>
 
-              <label style={settingRowStyle(cardBg, border)}>
+              <label style={settingRowStyle}>
                 <div>
                   <strong>Large Text Scaling</strong>
                   <p style={{ margin: 0, opacity: 0.7, fontSize: "0.85rem" }}>Increase overall font size throughout the app.</p>
@@ -491,65 +549,4 @@ export default function Home() {
       </main>
     </div>
   );
-}
-
-function navButtonStyle(isActive, primary, primaryText, border) {
-  return {
-    padding: "10px 14px",
-    borderRadius: "6px",
-    border: `1px solid ${isActive ? primary : "transparent"}`,
-    backgroundColor: isActive ? primary : "transparent",
-    color: isActive ? primaryText : "inherit",
-    textAlign: "left",
-    fontWeight: isActive ? "bold" : "normal",
-    cursor: "pointer",
-    fontSize: "0.95rem"
-  };
-}
-
-function inputStyle(cardBg, text, border) {
-  return {
-    width: "100%",
-    padding: "10px 14px",
-    borderRadius: "6px",
-    border: `1px solid ${border}`,
-    backgroundColor: cardBg,
-    color: text,
-    fontSize: "1rem"
-  };
-}
-
-function btnStyle(bg, text) {
-  return {
-    padding: "12px 20px",
-    borderRadius: "6px",
-    border: "none",
-    backgroundColor: bg,
-    color: text,
-    fontWeight: "bold",
-    cursor: "pointer",
-    fontSize: "1rem"
-  };
-}
-
-const errorStyle = {
-  marginTop: "16px",
-  padding: "12px",
-  backgroundColor: "#fee2e2",
-  border: "1px solid #ef4444",
-  color: "#991b1b",
-  borderRadius: "6px"
-};
-
-function settingRowStyle(cardBg, border) {
-  return {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px",
-    backgroundColor: cardBg,
-    border: `1px solid ${border}`,
-    borderRadius: "8px",
-    cursor: "pointer"
-  };
 }
