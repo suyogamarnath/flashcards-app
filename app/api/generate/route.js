@@ -25,7 +25,7 @@ export async function POST(req) {
         messages: [
           {
             role: "system",
-            content: "You are a flashcard generator. Extract key concepts and return ONLY valid JSON with no markdown formatting. Follow this exact structure: { \"flashcards\": [ { \"question\": \"...\", \"answer\": \"...\" } ] }",
+            content: "You are a flashcard generator. Extract key concepts. Output ONLY a raw JSON object matching: {\"flashcards\": [{\"question\": \"...\", \"answer\": \"...\"}]}. Do not include safety headers, intro text, or markdown blocks.",
           },
           {
             role: "user",
@@ -42,13 +42,19 @@ export async function POST(req) {
       return NextResponse.json({ error: data.error?.message || "OpenRouter API request failed." }, { status: response.status });
     }
 
-    let rawContent = data.choices[0].message.content;
-    rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+    const rawContent = data.choices[0]?.message?.content || "";
 
-    const parsedData = JSON.parse(rawContent);
+    // Extract the JSON object starting from the first '{' to the last '}'
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      return NextResponse.json({ error: "The model did not return a valid JSON object. Please try again." }, { status: 500 });
+    }
+
+    const parsedData = JSON.parse(jsonMatch[0]);
 
     return NextResponse.json({ flashcards: parsedData.flashcards || [] });
   } catch (error) {
-    return NextResponse.json({ error: error.message || "Failed to parse flashcard data." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to process flashcard response." }, { status: 500 });
   }
 }
