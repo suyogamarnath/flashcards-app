@@ -1,13 +1,10 @@
-import subprocess
-
-js_code = """
 "use client";
 
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState("ai"); // 'ai', 'manual', 'import', 'settings', 'deck'
+  const [activeTab, setActiveTab] = useState("ai");
   const [sets, setSets] = useState([]);
   const [activeDeckId, setActiveDeckId] = useState(null);
 
@@ -31,49 +28,50 @@ export default function Home() {
   // Import Tab State
   const [importTitle, setImportTitle] = useState("");
   const [importText, setImportText] = useState("");
-  const [termSeparator, setTermSeparator] = useState("tab"); // 'tab', 'comma', 'dash'
+  const [termSeparator, setTermSeparator] = useState("tab");
 
   // Card Flip State
   const [flippedCards, setFlippedCards] = useState({});
 
-  // Load saved state on mount
   useEffect(() => {
     setMounted(true);
-    const savedSets = localStorage.getItem("flashcard_sets");
-    if (savedSets) setSets(JSON.parse(savedSets));
+    if (typeof window !== "undefined") {
+      const savedSets = localStorage.getItem("flashcard_sets");
+      if (savedSets) setSets(JSON.parse(savedSets));
 
-    const savedDark = localStorage.getItem("fc_dark_mode");
-    if (savedDark !== null) setDarkMode(JSON.parse(savedDark));
+      const savedDark = localStorage.getItem("fc_dark_mode");
+      if (savedDark !== null) setDarkMode(JSON.parse(savedDark));
 
-    const savedContrast = localStorage.getItem("fc_high_contrast");
-    if (savedContrast !== null) setHighContrast(JSON.parse(savedContrast));
+      const savedContrast = localStorage.getItem("fc_high_contrast");
+      if (savedContrast !== null) setHighContrast(JSON.parse(savedContrast));
 
-    const savedLarge = localStorage.getItem("fc_large_text");
-    if (savedLarge !== null) setLargeText(JSON.parse(savedLarge));
+      const savedLarge = localStorage.getItem("fc_large_text");
+      if (savedLarge !== null) setLargeText(JSON.parse(savedLarge));
+    }
   }, []);
 
-  // Sync state changes to LocalStorage
   const saveSetsToStorage = (updatedSets) => {
     setSets(updatedSets);
-    localStorage.setItem("flashcard_sets", JSON.stringify(updatedSets));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("flashcard_sets", JSON.stringify(updatedSets));
+    }
   };
 
   const toggleDarkMode = (val) => {
     setDarkMode(val);
-    localStorage.setItem("fc_dark_mode", JSON.stringify(val));
+    if (typeof window !== "undefined") localStorage.setItem("fc_dark_mode", JSON.stringify(val));
   };
 
   const toggleHighContrast = (val) => {
     setHighContrast(val);
-    localStorage.setItem("fc_high_contrast", JSON.stringify(val));
+    if (typeof window !== "undefined") localStorage.setItem("fc_high_contrast", JSON.stringify(val));
   };
 
   const toggleLargeText = (val) => {
     setLargeText(val);
-    localStorage.setItem("fc_large_text", JSON.stringify(val));
+    if (typeof window !== "undefined") localStorage.setItem("fc_large_text", JSON.stringify(val));
   };
 
-  // Handlers for Deck Creation & Management
   const createDeck = (title, cards) => {
     if (!cards.length) return;
     const newDeck = {
@@ -90,7 +88,7 @@ export default function Home() {
 
   const deleteDeck = (id, e) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this deck?")) {
+    if (typeof window !== "undefined" && window.confirm("Are you sure you want to delete this deck?")) {
       const updated = sets.filter((s) => s.id !== id);
       saveSetsToStorage(updated);
       if (activeDeckId === id) {
@@ -100,7 +98,6 @@ export default function Home() {
     }
   };
 
-  // AI Handler
   const handleAIGenerate = async () => {
     if (!aiText) return;
     setAiLoading(true);
@@ -130,7 +127,6 @@ export default function Home() {
     }
   };
 
-  // Manual Add Card Handler
   const handleAddManualCard = () => {
     if (!manualTerm.trim() || !manualDef.trim()) return;
     setManualCards([...manualCards, { question: manualTerm.trim(), answer: manualDef.trim() }]);
@@ -145,15 +141,14 @@ export default function Home() {
     setManualTitle("");
   };
 
-  // Import Handler
   const handleImport = () => {
     if (!importText.trim()) return;
 
-    let sep = "\\t";
+    let sep = "\t";
     if (termSeparator === "comma") sep = ",";
     if (termSeparator === "dash") sep = "-";
 
-    const lines = importText.split("\\n");
+    const lines = importText.split("\n");
     const parsedCards = [];
 
     lines.forEach((line) => {
@@ -172,7 +167,9 @@ export default function Home() {
       setImportText("");
       setImportTitle("");
     } else {
-      alert("Could not parse any cards. Make sure terms and definitions match your selected separator.");
+      if (typeof window !== "undefined") {
+        alert("Could not parse any cards. Make sure terms and definitions match your selected separator.");
+      }
     }
   };
 
@@ -182,7 +179,6 @@ export default function Home() {
 
   if (!mounted) return null;
 
-  // Theme Colors
   const bg = darkMode ? (highContrast ? "#000000" : "#0f172a") : (highContrast ? "#ffffff" : "#f8fafc");
   const text = darkMode ? "#f8fafc" : "#0f172a";
   const sidebarBg = darkMode ? (highContrast ? "#000000" : "#1e293b") : (highContrast ? "#ffffff" : "#ffffff");
@@ -200,7 +196,6 @@ export default function Home() {
       <aside style={{ width: "260px", borderRight: `1px solid ${border}`, backgroundColor: sidebarBg, padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
         <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, color: primary }}>⚡ Flashcards</h2>
 
-        {/* Action Buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <button onClick={() => setActiveTab("ai")} style={navButtonStyle(activeTab === "ai", primary, primaryText, border)}>
             ✨ AI Generator
@@ -218,7 +213,6 @@ export default function Home() {
 
         <hr style={{ border: "none", borderTop: `1px solid ${border}`, margin: "0" }} />
 
-        {/* Saved Decks List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           <h3 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px", color: darkMode ? "#94a3b8" : "#64748b", marginBottom: "12px" }}>
             Saved Decks ({sets.length})
@@ -382,7 +376,7 @@ export default function Home() {
 
             <textarea
               rows={8}
-              placeholder={`Example format:\nTerm 1\\tDefinition 1\nTerm 2\\tDefinition 2`}
+              placeholder="Paste lines of terms and definitions here..."
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               style={{ ...inputStyle(cardBg, text, border), width: "100%", boxSizing: "border-box" }}
@@ -499,7 +493,6 @@ export default function Home() {
   );
 }
 
-// Helpers for Inline Styles
 function navButtonStyle(isActive, primary, primaryText, border) {
   return {
     padding: "10px 14px",
@@ -560,10 +553,3 @@ function settingRowStyle(cardBg, border) {
     cursor: "pointer"
   };
 }
-"""
-
-with open("/tmp/test_page.js", "w") as f:
-    f.write(js_code)
-
-res = subprocess.run(["node", "-c", "/tmp/test_page.js"], capture_output=True, text=True)
-print("Node check output:", res.stdout, res.stderr)
